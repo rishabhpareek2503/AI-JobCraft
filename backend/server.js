@@ -15,7 +15,24 @@ const openai = new OpenAI({
 app.use(cors())
 app.use(express.json())
 
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    message: "JD Assistant API is running",
+    hasApiKey: !!hasValidApiKey,
+    timestamp: new Date().toISOString()
+  })
+})
+
 const hasValidApiKey = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "sk-dummy-key-for-demo"
+
+// Debug logging
+console.log("Environment check:")
+console.log("- NODE_ENV:", process.env.NODE_ENV)
+console.log("- PORT:", process.env.PORT)
+console.log("- Has OpenAI API Key:", !!hasValidApiKey)
+console.log("- API Key starts with:", process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 10) + "..." : "Not set")
 
 const fallbackJDs = {
   default: `
@@ -122,6 +139,14 @@ app.post("/api/suggest-skills", async (req, res) => {
   try {
     const { jobTitle } = req.body
 
+    if (!jobTitle) {
+      return res.status(400).json({ error: "Job title is required" })
+    }
+
+    if (!hasValidApiKey) {
+      return res.status(500).json({ error: "OpenAI API key is not configured" })
+    }
+
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -145,7 +170,14 @@ app.post("/api/suggest-skills", async (req, res) => {
       .map((skill) => skill.trim())
     res.json({ skills })
   } catch (error) {
-    res.status(500).json({ error: "Failed to suggest skills" })
+    console.error("Error in suggest-skills:", error)
+    if (error.code === 'insufficient_quota') {
+      res.status(500).json({ error: "OpenAI quota exceeded. Please check your account." })
+    } else if (error.code === 'invalid_api_key') {
+      res.status(500).json({ error: "Invalid OpenAI API key. Please check your configuration." })
+    } else {
+      res.status(500).json({ error: "Failed to suggest skills. Please try again." })
+    }
   }
 })
 
@@ -200,7 +232,16 @@ app.post("/api/generate-jd", async (req, res) => {
         }
 
         return res.json({ jobDescription })
-      } catch (openaiError) {}
+      } catch (openaiError) {
+        console.error("OpenAI Error in generate-jd:", openaiError)
+        if (openaiError.code === 'insufficient_quota') {
+          return res.status(500).json({ error: "OpenAI quota exceeded. Please check your account." })
+        } else if (openaiError.code === 'invalid_api_key') {
+          return res.status(500).json({ error: "Invalid OpenAI API key. Please check your configuration." })
+        } else {
+          return res.status(500).json({ error: "Failed to generate job description with AI. Using fallback template." })
+        }
+      }
     }
 
     const jobTitleLower = jobTitle.toLowerCase()
@@ -252,3 +293,5 @@ app.post("/api/generate-jd", async (req, res) => {
 })
 
 app.listen(PORT, () => {})
+
+export default app

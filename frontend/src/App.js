@@ -1,9 +1,10 @@
-"use client"
+
 
 import { useState, useEffect } from "react"
 import Sidebar from "./components/Sidebar"
 import JDGenerator from "./components/JDGenerator"
 import Library from "./components/Library"
+import ApiTest from "./components/ApiTest"
 import "./App.css"
 
 function App() {
@@ -39,7 +40,10 @@ function App() {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="main-content">
         {activeTab === "generator" ? (
-          <JDGenerator onSave={saveJD} />
+          <>
+            <ApiTest />
+            <JDGenerator onSave={saveJD} />
+          </>
         ) : (
           <Library savedJDs={savedJDs} onDelete={deleteJD} />
         )}

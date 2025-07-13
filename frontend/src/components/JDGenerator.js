@@ -1,4 +1,4 @@
-"use client"
+
 
 import { useState } from "react"
 import axios from "axios"
@@ -23,11 +23,14 @@ const JDGenerator = ({ onSave }) => {
 
     setIsLoadingSkills(true)
     try {
-      const response = await axios.post("http://localhost:5000/api/suggest-skills", {
+      const response = await axios.post("/api/suggest-skills", {
         jobTitle: jobTitle.trim(),
       })
       setSuggestedSkills(response.data.skills)
     } catch (error) {
+      console.error("Error suggesting skills:", error)
+      const errorMessage = error.response?.data?.error || "Failed to get skill suggestions. Please try again."
+      alert(errorMessage)
     } finally {
       setIsLoadingSkills(false)
     }
@@ -55,7 +58,7 @@ const JDGenerator = ({ onSave }) => {
 
     setIsLoading(true)
     try {
-      const response = await axios.post("http://localhost:5000/api/generate-jd", {
+      const response = await axios.post("/api/generate-jd", {
         jobTitle: jobTitle.trim(),
         skills,
         companyName: companyName.trim(),
@@ -65,6 +68,9 @@ const JDGenerator = ({ onSave }) => {
       })
       setGeneratedJD(response.data.jobDescription)
     } catch (error) {
+      console.error("Error generating JD:", error)
+      const errorMessage = error.response?.data?.error || "Failed to generate job description. Please try again."
+      alert(errorMessage)
     } finally {
       setIsLoading(false)
     }
