@@ -1,5 +1,3 @@
-
-
 import { useState } from "react"
 import axios from "axios"
 import { Sparkles, Download, Copy, Loader2 } from "lucide-react"
@@ -29,8 +27,7 @@ const JDGenerator = ({ onSave }) => {
       setSuggestedSkills(response.data.skills)
     } catch (error) {
       console.error("Error suggesting skills:", error)
-      const errorMessage = error.response?.data?.error || "Failed to get skill suggestions. Please try again."
-      alert(errorMessage)
+      alert("Failed to get skill suggestions. Please try again.")
     } finally {
       setIsLoadingSkills(false)
     }
@@ -69,8 +66,7 @@ const JDGenerator = ({ onSave }) => {
       setGeneratedJD(response.data.jobDescription)
     } catch (error) {
       console.error("Error generating JD:", error)
-      const errorMessage = error.response?.data?.error || "Failed to generate job description. Please try again."
-      alert(errorMessage)
+      alert("Failed to generate job description. Please try again.")
     } finally {
       setIsLoading(false)
     }

@@ -1,5 +1,3 @@
-
-
 import { FileText, Library, Sparkles } from "lucide-react"
 import "./Sidebar.css"
 
