@@ -17,23 +17,17 @@ const JDGenerator = ({ onSave }) => {
   const [location, setLocation] = useState("")
   const [workMode, setWorkMode] = useState("")
   const [companyOverview, setCompanyOverview] = useState("")
-  const [error, setError] = useState("")
-  const [skillsError, setSkillsError] = useState("")
 
   const suggestSkills = async () => {
     if (!jobTitle.trim()) return
 
     setIsLoadingSkills(true)
-    setSkillsError("")
     try {
-      const response = await axios.post("/api/suggest-skills", {
+      const response = await axios.post("http://localhost:5000/api/suggest-skills", {
         jobTitle: jobTitle.trim(),
       })
       setSuggestedSkills(response.data.skills)
     } catch (error) {
-      const errorMessage = error.response?.data?.details || error.response?.data?.error || "Failed to suggest skills"
-      setSkillsError(errorMessage)
-      setSuggestedSkills([])
     } finally {
       setIsLoadingSkills(false)
     }
@@ -60,9 +54,8 @@ const JDGenerator = ({ onSave }) => {
     if (!jobTitle.trim()) return
 
     setIsLoading(true)
-    setError("")
     try {
-      const response = await axios.post("/api/generate-jd", {
+      const response = await axios.post("http://localhost:5000/api/generate-jd", {
         jobTitle: jobTitle.trim(),
         skills,
         companyName: companyName.trim(),
@@ -72,9 +65,6 @@ const JDGenerator = ({ onSave }) => {
       })
       setGeneratedJD(response.data.jobDescription)
     } catch (error) {
-      const errorMessage = error.response?.data?.details || error.response?.data?.error || "Failed to generate job description"
-      setError(errorMessage)
-      setGeneratedJD("")
     } finally {
       setIsLoading(false)
     }
@@ -253,15 +243,6 @@ const JDGenerator = ({ onSave }) => {
                   </div>
                 </div>
               )}
-
-              {skillsError && (
-                <div className="error-message">
-                  <div className="error-icon">⚠️</div>
-                  <div className="error-content">
-                    <strong>Error:</strong> {skillsError}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -308,15 +289,6 @@ const JDGenerator = ({ onSave }) => {
               </>
             )}
           </button>
-
-          {error && (
-            <div className="error-message">
-              <div className="error-icon">⚠️</div>
-              <div className="error-content">
-                <strong>Error:</strong> {error}
-              </div>
-            </div>
-          )}
         </div>
 
         {generatedJD && (
