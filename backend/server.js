@@ -8,21 +8,30 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 5000
 
-// Check for valid API key before initializing OpenAI
-const hasValidApiKey = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "sk-dummy-key-for-demo"
+// Initialize OpenAI client (will be validated on first API call)
+let openai = null
 
-if (!hasValidApiKey) {
-  console.error("❌ ERROR: Valid OpenAI API key is required!")
-  console.error("Please set OPENAI_API_KEY environment variable with a valid API key.")
-  process.exit(1)
+const initializeOpenAI = () => {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey || apiKey === "sk-dummy-key-for-demo") {
+    return null
+  }
+  return new OpenAI({ apiKey })
 }
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
 
 app.use(cors())
 app.use(express.json())
+
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  const hasApiKey = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "sk-dummy-key-for-demo"
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    hasApiKey: !!hasApiKey,
+    environment: process.env.NODE_ENV || "development"
+  })
+})
 
 
 
@@ -34,6 +43,18 @@ app.post("/api/suggest-skills", async (req, res) => {
       return res.status(400).json({ 
         error: "Job title is required",
         details: "Please provide a valid job title to get skill suggestions"
+      })
+    }
+
+    // Initialize OpenAI on each request
+    if (!openai) {
+      openai = initializeOpenAI()
+    }
+
+    if (!openai) {
+      return res.status(500).json({
+        error: "OpenAI API key not configured",
+        details: "Please set the OPENAI_API_KEY environment variable in your Vercel dashboard."
       })
     }
 
@@ -61,6 +82,7 @@ app.post("/api/suggest-skills", async (req, res) => {
     res.json({ skills })
   } catch (error) {
     console.error("OpenAI API Error:", error.message)
+    console.error("Error details:", error)
     
     if (error.code === 'insufficient_quota') {
       return res.status(429).json({ 
@@ -77,10 +99,15 @@ app.post("/api/suggest-skills", async (req, res) => {
         error: "Rate limit exceeded",
         details: "Too many requests. Please wait a moment and try again."
       })
+    } else if (error.message && error.message.includes('fetch')) {
+      return res.status(500).json({ 
+        error: "Network error",
+        details: "Unable to connect to OpenAI API. Please check your internet connection and try again."
+      })
     } else {
       return res.status(500).json({ 
         error: "Failed to suggest skills",
-        details: "An error occurred while generating skill suggestions. Please try again later."
+        details: `An error occurred: ${error.message || 'Unknown error'}`
       })
     }
   }
@@ -94,6 +121,18 @@ app.post("/api/generate-jd", async (req, res) => {
       return res.status(400).json({ 
         error: "Job title is required",
         details: "Please provide a valid job title to generate a job description"
+      })
+    }
+
+    // Initialize OpenAI on each request
+    if (!openai) {
+      openai = initializeOpenAI()
+    }
+
+    if (!openai) {
+      return res.status(500).json({
+        error: "OpenAI API key not configured",
+        details: "Please set the OPENAI_API_KEY environment variable in your Vercel dashboard."
       })
     }
 
@@ -140,6 +179,7 @@ app.post("/api/generate-jd", async (req, res) => {
     res.json({ jobDescription })
   } catch (error) {
     console.error("OpenAI API Error:", error.message)
+    console.error("Error details:", error)
     
     if (error.code === 'insufficient_quota') {
       return res.status(429).json({ 
@@ -156,10 +196,15 @@ app.post("/api/generate-jd", async (req, res) => {
         error: "Rate limit exceeded",
         details: "Too many requests. Please wait a moment and try again."
       })
+    } else if (error.message && error.message.includes('fetch')) {
+      return res.status(500).json({ 
+        error: "Network error",
+        details: "Unable to connect to OpenAI API. Please check your internet connection and try again."
+      })
     } else {
       return res.status(500).json({ 
         error: "Failed to generate job description",
-        details: "An error occurred while generating the job description. Please try again later."
+        details: `An error occurred: ${error.message || 'Unknown error'}`
       })
     }
   }
