@@ -1,7 +1,7 @@
 // Test script to verify API endpoints
 const axios = require('axios');
 
-const BASE_URL = 'https://your-vercel-app.vercel.app'; // Replace with your actual Vercel URL
+const BASE_URL = 'https://ai-job-craft-frontend.vercel.app'; // Your actual Vercel URL
 
 async function testAPI() {
   console.log('Testing API endpoints...\n');
